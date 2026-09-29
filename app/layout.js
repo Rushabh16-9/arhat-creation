@@ -1,11 +1,11 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Arhat Shop — Premium Products',
+  title: 'Arhat Creation — Premium Products',
   description: 'Discover premium products with exceptional quality. Shop the latest collections with fast delivery.',
   keywords: 'shop, premium, products, ecommerce, delivery, dry fruits, sweets, arhat creation',
   openGraph: {
-    title: 'Arhat Shop',
+    title: 'Arhat Creation',
     description: 'Premium product shopping experience',
     type: 'website',
   },

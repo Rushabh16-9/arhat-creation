@@ -12,7 +12,7 @@ export async function POST(request) {
     const { action, imageBase64, mimeType = 'image/jpeg', productName, productDescription } = body;
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
 
     if (action === 'enhance') {
       // Use Gemini to analyze and provide enhancement instructions, 
@@ -28,14 +28,15 @@ export async function POST(request) {
         1. A compelling product name (if not already: "${productName}")
         2. A detailed product description (3-4 sentences, highlight key benefits)
         3. Suggested category
-        4. Key selling points (3 bullet points)
+        4. Key selling points (3 bullet points)\n        5. A suggested CSS filter string to visually enhance the image (brightness, contrast, saturate)
         
         Respond in JSON format:
         {
           "suggestedName": "...",
           "description": "...",
           "category": "...",
-          "sellingPoints": ["...", "...", "..."]
+          "sellingPoints": ["...", "...", "..."],
+          "suggestedCssFilter": "e.g., contrast(1.1) saturate(1.2)"
         }`
       ]);
 

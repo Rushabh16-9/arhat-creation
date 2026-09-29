@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -84,7 +84,7 @@ export default function AdminLogin() {
 
         <div style={{ textAlign: "center", marginTop: 24 }}>
           <a href="/" style={{ fontSize: 12, color: "var(--text-muted)", transition: "color .2s" }}
-            onMouseEnter={e => e.target.style.color = '#fff'}
+            onMouseEnter={e => e.target.style.color = 'var(--primary)'}
             onMouseLeave={e => e.target.style.color = 'var(--text-muted)'}>
             ← Back to Store
           </a>
