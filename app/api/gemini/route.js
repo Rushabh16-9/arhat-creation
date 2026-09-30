@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function POST(request) {
@@ -127,7 +127,75 @@ export async function POST(request) {
       return NextResponse.json({ success: true, data: parsed, action: 'generate360Description' });
     }
 
-    return NextResponse.json({ error: 'Unknown action. Use: enhance, removeBackground, or generate360Description' }, { status: 400 });
+    if (action === 'analyzeInventory') {
+      const { products, bills } = body;
+      
+      const prompt = `You are an expert retail inventory analyst and pricing strategist.
+
+Here is the current product inventory:
+${JSON.stringify(products, null, 2)}
+
+Here is the order history (past bills):
+${JSON.stringify(bills, null, 2)}
+
+Analyze this data carefully and provide actionable business recommendations.
+Consider:
+- Which products sell fast (high demand) and need restocking
+- Which products are slow-moving and overstocked
+- Optimal pricing based on demand (increase price for high-demand, reduce for slow-movers)
+- Products that are out of stock but were previously ordered (missed revenue)
+
+Respond ONLY with valid JSON in this exact format:
+{
+  "summary": "2-3 sentence executive summary of inventory health",
+  "restock": [
+    {
+      "productId": "...",
+      "productName": "...",
+      "currentStock": 0,
+      "recommendedStock": 20,
+      "currentPrice": 500,
+      "recommendedPrice": 550,
+      "reason": "Sold X units in past Y days, high demand",
+      "urgency": "high"
+    }
+  ],
+  "reduce": [
+    {
+      "productId": "...",
+      "productName": "...",
+      "currentStock": 50,
+      "recommendedStock": 15,
+      "currentPrice": 800,
+      "recommendedPrice": 699,
+      "reason": "Only sold X units, slow moving",
+      "urgency": "low"
+    }
+  ],
+  "outOfStockAlert": [
+    {
+      "productId": "...",
+      "productName": "...",
+      "orderedCount": 5,
+      "reason": "Was ordered but currently out of stock"
+    }
+  ]
+}`;
+
+      const result = await model.generateContent([prompt]);
+      const text = result.response.text();
+      let parsed;
+      try {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text, restock: [], reduce: [], outOfStockAlert: [] };
+      } catch {
+        parsed = { summary: 'Could not parse analysis. Please try again.', restock: [], reduce: [], outOfStockAlert: [] };
+      }
+
+      return NextResponse.json({ success: true, data: parsed, action: 'analyzeInventory' });
+    }
+
+    return NextResponse.json({ error: 'Unknown action.' }, { status: 400 });
 
   } catch (err) {
     console.error('Gemini API error:', err);

@@ -32,6 +32,217 @@ function StatsBar({ products }) {
   );
 }
 
+// ===== AI ANALYSER =====
+function AIAnalyser({ products }) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+
+  async function runAnalysis() {
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    try {
+      const saved = localStorage.getItem('arhat_pos_bills');
+      const bills = saved ? JSON.parse(saved) : [];
+      const res = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'analyzeInventory',
+          products: products.map(p => ({ id: p.id, name: p.name, price: p.price, stock: p.stock, category: p.category })),
+          bills
+        })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Analysis failed');
+      setResult(data.data);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const urgencyColor = (u) => u === 'high' ? '#e5202f' : u === 'medium' ? '#f59e0b' : '#10b981';
+  const urgencyBg = (u) => u === 'high' ? '#fef2f2' : u === 'medium' ? '#fffbeb' : '#f0fdf4';
+
+  return (
+    <div style={{ padding: '0 0 40px 0' }}>
+      {/* Header */}
+      <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', borderRadius: 20, padding: '28px 32px', marginBottom: 28, color: '#fff', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
+        <div style={{ position: 'absolute', bottom: -20, right: 60, width: 80, height: 80, background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
+          <span style={{ fontSize: 32 }}>🤖</span>
+          <div>
+            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em' }}>AI Inventory Analyser</h2>
+            <p style={{ margin: 0, fontSize: 13, opacity: 0.85 }}>Powered by Gemini AI • Analyzes sales & stock to guide decisions</p>
+          </div>
+        </div>
+        <button
+          onClick={runAnalysis}
+          disabled={loading}
+          style={{
+            background: '#fff', color: '#764ba2', border: 'none', borderRadius: 12,
+            padding: '12px 28px', fontWeight: 800, fontSize: 14, cursor: loading ? 'not-allowed' : 'pointer',
+            opacity: loading ? 0.7 : 1, transition: 'all 0.2s', display: 'inline-flex', alignItems: 'center', gap: 8
+          }}
+        >
+          {loading ? (
+            <><span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid #764ba2', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />Analysing...</>
+          ) : '✨ Run Analysis'}
+        </button>
+      </div>
+
+      {error && (
+        <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: 12, padding: '16px 20px', color: '#dc2626', marginBottom: 20, fontSize: 14 }}>
+          ⚠️ {error}
+        </div>
+      )}
+
+      {!result && !loading && (
+        <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)' }}>
+          <div style={{ fontSize: 52, marginBottom: 16 }}>📊</div>
+          <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>No analysis yet</p>
+          <p style={{ fontSize: 13 }}>Click "Run Analysis" to get AI-powered restocking & pricing recommendations based on your sales history.</p>
+        </div>
+      )}
+
+      {result && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* Summary */}
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <span style={{ fontSize: 20 }}>📋</span>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Executive Summary</h3>
+            </div>
+            <p style={{ margin: 0, color: 'var(--text)', fontSize: 14, lineHeight: 1.7 }}>{result.summary}</p>
+          </div>
+
+          {/* Restock */}
+          {result.restock?.length > 0 && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <span style={{ fontSize: 20 }}>🔺</span>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#e5202f' }}>Restock These Products</h3>
+                <span style={{ background: '#fef2f2', color: '#e5202f', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>{result.restock.length} items</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {result.restock.map((item, i) => (
+                  <div key={i} style={{ background: 'var(--surface)', border: `1px solid ${urgencyColor(item.urgency)}33`, borderLeft: `4px solid ${urgencyColor(item.urgency)}`, borderRadius: 14, padding: '16px 20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--primary)', marginBottom: 2 }}>{item.productName}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{item.reason}</div>
+                      </div>
+                      <span style={{ background: urgencyBg(item.urgency), color: urgencyColor(item.urgency), fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                        {item.urgency} urgency
+                      </span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
+                      <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Current Stock</div>
+                        <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--primary)' }}>{item.currentStock}</div>
+                      </div>
+                      <div style={{ background: '#f0fdf4', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: '#10b981', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Target Stock</div>
+                        <div style={{ fontWeight: 800, fontSize: 18, color: '#10b981' }}>{item.recommendedStock}</div>
+                      </div>
+                      <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Current Price</div>
+                        <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--primary)' }}>₹{item.currentPrice}</div>
+                      </div>
+                      <div style={{ background: '#f0fdf4', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: '#10b981', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Suggested Price</div>
+                        <div style={{ fontWeight: 800, fontSize: 16, color: '#10b981' }}>₹{item.recommendedPrice}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Reduce / Slow movers */}
+          {result.reduce?.length > 0 && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <span style={{ fontSize: 20 }}>🔻</span>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#f59e0b' }}>Reduce Stock / Drop Price</h3>
+                <span style={{ background: '#fffbeb', color: '#f59e0b', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>{result.reduce.length} items</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {result.reduce.map((item, i) => (
+                  <div key={i} style={{ background: 'var(--surface)', border: '1px solid #f59e0b33', borderLeft: '4px solid #f59e0b', borderRadius: 14, padding: '16px 20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--primary)', marginBottom: 2 }}>{item.productName}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{item.reason}</div>
+                      </div>
+                      <span style={{ background: '#fffbeb', color: '#f59e0b', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>slow mover</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
+                      <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Current Stock</div>
+                        <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--primary)' }}>{item.currentStock}</div>
+                      </div>
+                      <div style={{ background: '#fffbeb', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: '#f59e0b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Target Stock</div>
+                        <div style={{ fontWeight: 800, fontSize: 18, color: '#f59e0b' }}>{item.recommendedStock}</div>
+                      </div>
+                      <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Current Price</div>
+                        <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--primary)' }}>₹{item.currentPrice}</div>
+                      </div>
+                      <div style={{ background: '#fffbeb', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: '#f59e0b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Suggested Price</div>
+                        <div style={{ fontWeight: 800, fontSize: 16, color: '#f59e0b' }}>₹{item.recommendedPrice}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Out of stock alerts */}
+          {result.outOfStockAlert?.length > 0 && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <span style={{ fontSize: 20 }}>🚨</span>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#dc2626' }}>Out of Stock — Missed Revenue</h3>
+                <span style={{ background: '#fef2f2', color: '#dc2626', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>{result.outOfStockAlert.length} alerts</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {result.outOfStockAlert.map((item, i) => (
+                  <div key={i} style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <span style={{ fontSize: 24 }}>📦</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, color: '#dc2626', marginBottom: 2 }}>{item.productName}</div>
+                      <div style={{ fontSize: 13, color: '#7f1d1d' }}>{item.reason} — ordered {item.orderedCount} times</div>
+                    </div>
+                    <div style={{ background: '#dc2626', color: '#fff', borderRadius: 10, padding: '6px 14px', fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap' }}>Restock Now</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {result.restock?.length === 0 && result.reduce?.length === 0 && result.outOfStockAlert?.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '32px', background: '#f0fdf4', borderRadius: 16, border: '1px solid #bbf7d0' }}>
+              <div style={{ fontSize: 36, marginBottom: 10 }}>✅</div>
+              <div style={{ fontWeight: 700, color: '#10b981', fontSize: 16 }}>Inventory looks healthy!</div>
+              <div style={{ color: '#065f46', fontSize: 13, marginTop: 4 }}>No immediate action required based on current data.</div>
+            </div>
+          )}
+        </div>
+      )}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
 // ===== PRODUCT FORM =====
 function ProductForm({ editProduct, onSave, onCancel, showToast }) {
   const [name, setName] = useState(editProduct?.name || "");
@@ -932,6 +1143,11 @@ export default function AdminPanel() {
             </button>
           </li>
           <li>
+            <button onClick={() => { setActiveTab("ai"); setShowForm(false); setMenuOpen(false); }} className={activeTab === "ai" && !showForm ? "active" : ""} id="tab-ai-analyser">
+              🤖 AI Analyser
+            </button>
+          </li>
+          <li>
         <button onClick={() => { setActiveTab("bill"); setShowForm(false); setMenuOpen(false); }} className={activeTab === "bill" ? "active" : ""} id="tab-billing">
               🧾 Billing (POS)
             </button>
@@ -967,13 +1183,14 @@ export default function AdminPanel() {
             </button>
             <div>
               <h1 className="admin-title">
-              {activeTab === "products" ? "Product Management" : activeTab === "bill" ? "Billing (POS)" : "Dashboard"}
-            </h1>
-            <p className="admin-subtitle">
-              {isMock
-                ? "⚠️ Demo mode — Configure Supabase to save real data"
-                : `${products.length} products in database`}
-            </p>
+                {activeTab === "products" ? "Product Management" : activeTab === "bill" ? "Billing (POS)" : activeTab === "ai" ? "AI Analyser" : activeTab === "bulk" ? "Bulk Upload" : "Dashboard"}
+              </h1>
+              <p className="admin-subtitle">
+                {isMock
+                  ? "⚠️ Demo mode — Configure Supabase to save real data"
+                  : `${products.length} products in database`}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -1003,6 +1220,8 @@ export default function AdminPanel() {
             <div className="loader-ring" />
             <p className="loader-text">Loading products...</p>
           </div>
+        ) : activeTab === "ai" && !showForm ? (
+          <AIAnalyser products={products} />
         ) : activeTab === "bulk" && !showForm ? (
           <BulkUploadForm onSave={handleFormSave} showToast={showToast} />
         ) : activeTab === "bill" && !showForm ? (
