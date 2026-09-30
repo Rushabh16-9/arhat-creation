@@ -19,8 +19,9 @@ export async function POST(request) {
     }
 
     async function generateWithFallback(parts) {
-      const models = ['gemini-3.8-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+      const models = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
       let lastError;
+      
       for (const modelName of models) {
         try {
           const m = await getModel(modelName);
@@ -28,13 +29,14 @@ export async function POST(request) {
           return result;
         } catch (err) {
           if (err?.status === 503 || err?.message?.includes('503') || err?.message?.includes('overloaded') || err?.message?.includes('high demand')) {
+            console.warn(`[Fallback] ${modelName} overloaded, trying next model...`);
             lastError = err;
             continue; // try next model
           }
-          throw err; // non-503 error, rethrow
+          throw err; // non-503 error, throw immediately
         }
       }
-      throw lastError;
+      throw lastError; // if all fail
     }
 
     if (action === 'enhance') {

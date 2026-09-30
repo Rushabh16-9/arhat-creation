@@ -960,7 +960,7 @@ function BulkUploadForm({ onSave, showToast }) {
       
       <div className="add-product-grid" style={{ padding: 24 }}>
         {/* Left Side: Image Viewer */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="add-product-img-col" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
            <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: 20, overflow: 'hidden', background: 'var(--bg2)', border: '1px solid var(--border)', boxShadow: '0 8px 30px rgba(0,0,0,0.06)' }}>
              <img src={current.preview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
            </div>
