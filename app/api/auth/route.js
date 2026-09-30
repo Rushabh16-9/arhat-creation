@@ -1,7 +1,7 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'arhat@admin.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'arhat.99';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 export async function POST(request) {
   try {
