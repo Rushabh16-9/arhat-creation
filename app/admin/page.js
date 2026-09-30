@@ -926,10 +926,6 @@ export default function AdminPanel() {
             </button>
           </li>
           <li>
-            <button onClick={() => { setActiveTab("bulk"); setShowForm(false); }} className={activeTab === "bulk" && !showForm ? "active" : ""}>
-          <div style={{ fontSize: '20px', marginBottom: '4px' }}>{"\uD83D\uDCE5"}</div>
-          <span>Bulk</span>
-        </button>
         <button onClick={() => { setActiveTab("bill"); setShowForm(false); }} className={activeTab === "bill" ? "active" : ""} id="tab-billing">
               🧾 Billing (POS)
             </button>
