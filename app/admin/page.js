@@ -14,7 +14,6 @@ function StatsBar({ products }) {
   const total = products.length;
   const inStock = products.filter(p => p.stock > 0).length;
   const outOfStock = products.filter(p => p.stock === 0).length;
-  const totalValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0);
   return (
     <div className="stats-grid">
       <div className="stat-card">
@@ -28,10 +27,6 @@ function StatsBar({ products }) {
       <div className="stat-card">
         <div className="stat-label">Out of Stock</div>
         <div className="stat-value" style={{ color: "#e5202f" }}>{outOfStock}</div>
-      </div>
-      <div className="stat-card">
-        <div className="stat-label">Inventory Value</div>
-        <div className="stat-value yellow">₹{totalValue.toLocaleString("en-IN")}</div>
       </div>
     </div>
   );
@@ -752,7 +747,7 @@ function BulkUploadForm({ onSave, showToast }) {
         <button onClick={() => setQueue([])} style={{ color: 'var(--red)', background: 'none', border: 'none', fontWeight: 600, cursor: 'pointer' }}>Cancel Bulk</button>
       </div>
       
-      <div style={{ padding: 24, display: 'grid', gridTemplateColumns: 'minmax(250px, 1fr) minmax(300px, 2fr)', gap: 32 }}>
+      <div className="add-product-grid" style={{ padding: 24 }}>
         {/* Left Side: Image Viewer */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
            <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: 20, overflow: 'hidden', background: 'var(--bg2)', border: '1px solid var(--border)', boxShadow: '0 8px 30px rgba(0,0,0,0.06)' }}>
@@ -916,30 +911,28 @@ export default function AdminPanel() {
 
   return (
     <div className="admin-layout">
+      {/* Sidebar Overlay for Mobile */}
+      <div className={`admin-sidebar-overlay ${menuOpen ? 'open' : ''}`} onClick={() => setMenuOpen(false)} />
+
       {/* Sidebar */}
-      <aside className="admin-sidebar">
+      <aside className={`admin-sidebar ${menuOpen ? 'open' : ''}`}>
         <div className="sidebar-logo">
           Arhat Creation
           <span>Admin Panel</span>
         </div>
         <ul className="sidebar-nav">
           <li>
-            <button onClick={() => { setActiveTab("products"); setShowForm(false); }} className={activeTab === "products" && !showForm ? "active" : ""} id="tab-products">
+            <button onClick={() => { setActiveTab("products"); setShowForm(false); setMenuOpen(false); }} className={activeTab === "products" && !showForm ? "active" : ""} id="tab-products">
               📦 Products
             </button>
           </li>
           <li>
-            <button onClick={() => { setShowForm(true); setEditProduct(null); setActiveTab("products"); }} className={showForm && !editProduct ? "active" : ""} id="tab-add-product">
-              ➕ Add Product
-            </button>
-          </li>
-          <li>
-            <button onClick={() => { setActiveTab("bulk"); setShowForm(false); }} className={activeTab === "bulk" && !showForm ? "active" : ""} id="tab-bulk">
+            <button onClick={() => { setActiveTab("bulk"); setShowForm(false); setMenuOpen(false); }} className={activeTab === "bulk" && !showForm ? "active" : ""} id="tab-bulk">
               {"\uD83D\uDCE5"} Bulk Upload
             </button>
           </li>
           <li>
-        <button onClick={() => { setActiveTab("bill"); setShowForm(false); }} className={activeTab === "bill" ? "active" : ""} id="tab-billing">
+        <button onClick={() => { setActiveTab("bill"); setShowForm(false); setMenuOpen(false); }} className={activeTab === "bill" ? "active" : ""} id="tab-billing">
               🧾 Billing (POS)
             </button>
           </li>
@@ -949,7 +942,7 @@ export default function AdminPanel() {
             </a>
           </li>
           <li style={{ marginTop: "auto" }}>
-            <button onClick={handleLogout} id="logout-btn" style={{ color: "#e5202f" }}>
+            <button onClick={() => { handleLogout(); setMenuOpen(false); }} id="logout-btn" style={{ color: "#e5202f" }}>
               🚪 Logout
             </button>
           </li>
@@ -957,81 +950,23 @@ export default function AdminPanel() {
       </aside>
 
 
-      {/* Mobile Top Navigation */}
-      <nav className="admin-mobile-nav" role="navigation" style={{ 
-        height: 'auto',
-        minHeight: '64px',
-        flexDirection: 'column',
-        alignItems: 'stretch',
-        padding: '0 24px',
-        borderRadius: menuOpen ? '24px' : '32px',
-        transition: 'all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
-        overflow: 'hidden',
-        position: 'fixed',
-        top: '16px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: 'min(840px, calc(100vw - 32px))',
-        background: 'var(--surface)',
-        border: '1px solid var(--border2)',
-        boxShadow: '0 8px 32px rgba(15, 23, 42, 0.08)',
-        zIndex: 1000
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', minHeight: '64px' }}>
-          <div style={{ fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.02em', fontSize: '18px' }}>
-            Admin Panel
-          </div>
-          <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: 'none', border: 'none', padding: '8px', cursor: 'pointer' }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              {menuOpen ? (
-                <>
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </>
-              ) : (
-                <>
-                  <line x1="3" y1="12" x2="21" y2="12"></line>
-                  <line x1="3" y1="6" x2="21" y2="6"></line>
-                  <line x1="3" y1="18" x2="21" y2="18"></line>
-                </>
-              )}
-            </svg>
-          </button>
-        </div>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateRows: menuOpen ? '1fr' : '0fr',
-          transition: 'grid-template-rows 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
-          width: '100%'
-        }}>
-          <div style={{ overflow: 'hidden' }}>
-            <div style={{ 
-              width: '100%', 
-              padding: menuOpen ? '16px 0 24px 0' : '0', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '16px', 
-              borderTop: menuOpen ? '1px solid var(--border)' : '1px solid transparent',
-              opacity: menuOpen ? 1 : 0,
-              transition: 'all 0.3s ease',
-              pointerEvents: menuOpen ? 'auto' : 'none'
-            }}>
-              <button onClick={() => { setActiveTab("products"); setShowForm(false); setMenuOpen(false); }} style={{ textAlign: 'left', padding: '4px 12px', fontWeight: '600', color: activeTab === "products" && !showForm ? 'var(--primary)' : 'var(--text-muted)' }}>📦 Products</button>
-              <button onClick={() => { setShowForm(true); setEditProduct(null); setActiveTab("products"); setMenuOpen(false); }} style={{ textAlign: 'left', padding: '4px 12px', fontWeight: '600', color: showForm && !editProduct ? 'var(--primary)' : 'var(--text-muted)' }}>➕ Add Product</button>
-              <button onClick={() => { setActiveTab("bulk"); setShowForm(false); setMenuOpen(false); }} style={{ textAlign: 'left', padding: '4px 12px', fontWeight: '600', color: activeTab === "bulk" && !showForm ? 'var(--primary)' : 'var(--text-muted)' }}>{"\uD83D\uDCE5"} Bulk Upload</button>
-              <button onClick={() => { setActiveTab("bill"); setShowForm(false); setMenuOpen(false); }} style={{ textAlign: 'left', padding: '4px 12px', fontWeight: '600', color: activeTab === "bill" && !showForm ? 'var(--primary)' : 'var(--text-muted)' }}>🧾 Billing (POS)</button>
-              <button onClick={() => { handleLogout(); setMenuOpen(false); }} style={{ textAlign: 'left', padding: '4px 12px', fontWeight: '600', color: 'var(--red)' }}>🚪 Logout</button>
-            </div>
-          </div>
-        </div>
-      </nav>
-      
       {/* Main Content Area */}
       <main className="admin-main">
         <div className="admin-header">
-          <div>
-            <h1 className="admin-title">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button 
+              onClick={() => setMenuOpen(true)} 
+              style={{ background: 'none', border: 'none', padding: '0', cursor: 'pointer' }}
+              className="admin-mobile-menu-btn"
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+            </button>
+            <div>
+              <h1 className="admin-title">
               {activeTab === "products" ? "Product Management" : activeTab === "bill" ? "Billing (POS)" : "Dashboard"}
             </h1>
             <p className="admin-subtitle">
@@ -1040,15 +975,6 @@ export default function AdminPanel() {
                 : `${products.length} products in database`}
             </p>
           </div>
-          {!showForm && (
-            <button
-              className="glow-btn add-product-btn"
-              onClick={() => { setShowForm(true); setEditProduct(null); }}
-              id="add-product-header-btn"
-            >
-              <span>➕ Add Product</span>
-            </button>
-          )}
         </div>
 
         {isMock && (
@@ -1058,7 +984,9 @@ export default function AdminPanel() {
           </div>
         )}
 
-        <StatsBar products={products} />
+        {activeTab === "products" && !showForm && (
+          <StatsBar products={products} />
+        )}
 
         {showForm && (
           <ProductForm
@@ -1102,7 +1030,7 @@ export default function AdminPanel() {
                 {products.length === 0 ? (
                   <tr>
                     <td colSpan={6} style={{ textAlign: "center", padding: "48px", color: "var(--text-muted)", fontSize: 14 }}>
-                      No products yet. Click "Add Product" to get started.
+                      No products yet. Use Bulk Upload to add products.
                     </td>
                   </tr>
                 ) : (

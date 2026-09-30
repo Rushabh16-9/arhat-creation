@@ -718,10 +718,19 @@ img { max-width:100%; display:block; }
 
 /* TABLET & SMALL DESKTOP (max-width: 900px) */
 @media (max-width: 900px) {
-  /* Admin Sidebar */
-  .admin-sidebar { display: none; }
-  .admin-content, .admin-topbar { padding-left: 20px; padding-right: 20px; }
-  .admin-content { padding-bottom: 80px; }
+  /* Admin Sidebar - Mobile Drawer */
+  .admin-sidebar { 
+    position: fixed; top: 0; left: -260px; height: 100vh; z-index: 2000; 
+    transition: left 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); 
+  }
+  .admin-sidebar.open { left: 0; }
+  .admin-sidebar-overlay { 
+    display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+    background: rgba(0,0,0,0.5); z-index: 1999; opacity: 0; transition: opacity 0.3s;
+  }
+  .admin-sidebar-overlay.open { display: block; opacity: 1; }
+  .admin-content, .admin-topbar, .admin-header { padding-left: 20px; padding-right: 20px; }
+  .admin-content { padding-bottom: 20px; }
   
   /* Admin Upload Form */
   .upload-section { grid-template-columns: 1fr !important; }
@@ -838,9 +847,15 @@ img { max-width:100%; display:block; }
 .admin-mobile-nav {
   display: none !important;
 }
+.admin-mobile-menu-btn {
+  display: none;
+}
 
 @media (max-width: 900px) {
   .admin-mobile-nav {
+    display: flex !important;
+  }
+  .admin-mobile-menu-btn {
     display: flex !important;
   }
 }
