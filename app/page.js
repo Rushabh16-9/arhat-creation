@@ -503,28 +503,20 @@ function UserProfileModal({ isOpen, onClose, userProfile, setUserProfile, showTo
 // ===== CART SIDEBAR =====
 function CartSidebar({ cart, setCart, isOpen, onClose, WA, userProfile }) {
   const cartTotal = cart.reduce((sum, item) => sum + (item.product.price * item.qty), 0);
-  const [deliveryAddr, setDeliveryAddr] = useState('');
-  const addrMissing = !deliveryAddr.trim();
-
-  // Pre-fill from profile when sidebar opens
-  useEffect(() => {
-    if (isOpen && userProfile?.address && !deliveryAddr) {
-      setDeliveryAddr(userProfile.address);
-    }
-  }, [isOpen, userProfile]);
 
   const handleCheckout = () => {
-    if (cart.length === 0 || addrMissing) return;
+    if (cart.length === 0) return;
     const msg = [
       `*NEW BULK CART ORDER*`,
       `---------------------------------------`,
-      ...cart.map(item => `*${item.qty}x* ${item.product.name} -> \u20b9${(item.product.price * item.qty).toLocaleString('en-IN')}`),
+      ...cart.map(item => `*${item.qty}x* ${item.product.name} -> ₹${(item.product.price * item.qty).toLocaleString('en-IN')}`),
       `---------------------------------------`,
-      `*Grand Total:* \u20b9${cartTotal.toLocaleString('en-IN')}`,
+      `*Grand Total:* ₹${cartTotal.toLocaleString('en-IN')}`,
       '',
-      `*Delivery Location:* ${deliveryAddr}`,
-      '',
+      ...(userProfile?.address ? [`*Delivery Location:* ${userProfile.address}`, ''] : []),
       `*Order Time:* ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
+      '',
+      `*Next Step:* ${userProfile?.address ? 'Please confirm if you want delivery to your saved address above.' : 'Please reply to this message with your full delivery address to confirm your order!'}`,
       `---------------------------------------`,
       `_Sent securely via Arhat Creation_`
     ].join('\n');
@@ -551,7 +543,7 @@ function CartSidebar({ cart, setCart, isOpen, onClose, WA, userProfile }) {
       <div style={{ position: 'fixed', top: 0, right: isOpen ? 0 : '-400px', width: '100%', maxWidth: '400px', height: '100vh', background: '#fff', zIndex: 9999, transition: 'right 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)', display: 'flex', flexDirection: 'column', boxShadow: '-10px 0 30px rgba(0,0,0,0.1)' }}>
         <div style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--primary)', margin: 0 }}>Your Cart</h2>
-          <button onClick={onClose} style={{ background: 'var(--bg3)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>&times;</button>
+          <button onClick={onClose} style={{ background: 'var(--bg3)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>✕</button>
         </div>
         
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -568,7 +560,7 @@ function CartSidebar({ cart, setCart, isOpen, onClose, WA, userProfile }) {
                     <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '700', color: 'var(--primary)' }}>{item.product.name}</h4>
                     <button onClick={() => removeItem(item.product.id)} style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Remove</button>
                   </div>
-                  <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--primary)', marginBottom: '8px' }}>{"\u20b9"}{item.product.price.toLocaleString('en-IN')}</div>
+                  <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--primary)', marginBottom: '8px' }}>{"₹"}{item.product.price.toLocaleString('en-IN')}</div>
                   <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', borderRadius: '8px', border: '1px solid var(--border)', width: 'fit-content' }}>
                     <button onClick={() => updateQty(item.product.id, -1)} style={{ padding: '4px 12px', background: 'none', border: 'none', cursor: 'pointer' }}>-</button>
                     <span style={{ fontSize: '13px', fontWeight: '700', width: '20px', textAlign: 'center' }}>{item.qty}</span>
@@ -581,31 +573,12 @@ function CartSidebar({ cart, setCart, isOpen, onClose, WA, userProfile }) {
         </div>
 
         {cart.length > 0 && (
-          <div style={{ padding: '20px 24px', borderTop: '1px solid var(--border)', background: '#f8fafc' }}>
-            {/* Delivery address field */}
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: addrMissing ? '#ef4444' : 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Delivery Address *</label>
-              <textarea
-                rows={2}
-                value={deliveryAddr}
-                onChange={e => setDeliveryAddr(e.target.value)}
-                placeholder="Enter your full delivery address..."
-                style={{ width: '100%', padding: '10px 12px', fontSize: '13px', border: `1.5px solid ${addrMissing ? '#fca5a5' : '#cbd5e1'}`, borderRadius: '10px', outline: 'none', resize: 'none', background: '#fff', boxSizing: 'border-box', fontFamily: 'inherit', transition: 'border-color 0.2s' }}
-                onFocus={e => e.currentTarget.style.borderColor = 'var(--primary)'}
-                onBlur={e => e.currentTarget.style.borderColor = addrMissing ? '#fca5a5' : '#cbd5e1'}
-              />
-              {addrMissing && <p style={{ fontSize: '11px', color: '#ef4444', margin: '3px 0 0 2px', fontWeight: '600' }}>Required to place order</p>}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', fontSize: '18px', fontWeight: '800', color: 'var(--primary)' }}>
+          <div style={{ padding: '24px', borderTop: '1px solid var(--border)', background: '#f8fafc' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '18px', fontWeight: '800', color: 'var(--primary)' }}>
               <span>Total</span>
-              <span>{"\u20b9"}{cartTotal.toLocaleString('en-IN')}</span>
+              <span>{"₹"}{cartTotal.toLocaleString('en-IN')}</span>
             </div>
-            <button
-              onClick={handleCheckout}
-              disabled={addrMissing}
-              title={addrMissing ? 'Enter delivery address to checkout' : 'Checkout via WhatsApp'}
-              style={{ width: '100%', padding: '16px', background: addrMissing ? '#94a3b8' : 'var(--primary)', color: '#fff', fontSize: '16px', fontWeight: '700', borderRadius: '12px', border: 'none', cursor: addrMissing ? 'not-allowed' : 'pointer', display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', transition: 'background 0.2s' }}
-            >
+            <button onClick={handleCheckout} style={{ width: '100%', padding: '16px', background: 'var(--primary)', color: '#fff', fontSize: '16px', fontWeight: '700', borderRadius: '12px', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center' }}>
               Checkout via WhatsApp
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
             </button>
