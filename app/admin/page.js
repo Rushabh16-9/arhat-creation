@@ -826,6 +826,7 @@ export default function AdminPanel() {
   const [toast, setToast] = useState({ show: false, message: "", type: "info" });
   const [activeTab, setActiveTab] = useState("products");
   const [isMock, setIsMock] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => { checkAuth(); }, []);
   useEffect(() => { if (authed) loadProducts(); }, [authed]);
@@ -956,28 +957,74 @@ export default function AdminPanel() {
       </aside>
 
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="admin-mobile-nav">
-        <button onClick={() => { setActiveTab("products"); setShowForm(false); }} className={activeTab === "products" && !showForm ? "active" : ""}>
-          <div style={{ fontSize: '20px', marginBottom: '4px' }}>📦</div>
-          <span>Products</span>
-        </button>
-        <button onClick={() => { setShowForm(true); setEditProduct(null); setActiveTab("products"); }} className={showForm && !editProduct ? "active" : ""}>
-          <div style={{ fontSize: '20px', marginBottom: '4px' }}>➕</div>
-          <span>Add</span>
-        </button>
-        <button onClick={() => { setActiveTab("bulk"); setShowForm(false); }} className={activeTab === "bulk" && !showForm ? "active" : ""}>
-          <div style={{ fontSize: '20px', marginBottom: '4px' }}>{"\uD83D\uDCE5"}</div>
-          <span>Bulk</span>
-        </button>
-        <button onClick={() => { setActiveTab("bill"); setShowForm(false); }} className={activeTab === "bill" && !showForm ? "active" : ""}>
-          <div style={{ fontSize: '20px', marginBottom: '4px' }}>🧾</div>
-          <span>POS</span>
-        </button>
-        <button onClick={handleLogout} style={{ color: "var(--red)" }}>
-          <div style={{ fontSize: '20px', marginBottom: '4px' }}>🚪</div>
-          <span>Logout</span>
-        </button>
+      {/* Mobile Top Navigation */}
+      <nav className="admin-mobile-nav" role="navigation" style={{ 
+        height: 'auto',
+        minHeight: '64px',
+        flexDirection: 'column',
+        alignItems: 'stretch',
+        padding: '0 24px',
+        borderRadius: menuOpen ? '24px' : '32px',
+        transition: 'all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
+        overflow: 'hidden',
+        position: 'fixed',
+        top: '16px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: 'min(840px, calc(100vw - 32px))',
+        background: 'var(--surface)',
+        border: '1px solid var(--border2)',
+        boxShadow: '0 8px 32px rgba(15, 23, 42, 0.08)',
+        zIndex: 1000
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', minHeight: '64px' }}>
+          <div style={{ fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.02em', fontSize: '18px' }}>
+            Admin Panel
+          </div>
+          <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: 'none', border: 'none', padding: '8px', cursor: 'pointer' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {menuOpen ? (
+                <>
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </>
+              ) : (
+                <>
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </>
+              )}
+            </svg>
+          </button>
+        </div>
+        
+        <div style={{
+          display: 'grid',
+          gridTemplateRows: menuOpen ? '1fr' : '0fr',
+          transition: 'grid-template-rows 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
+          width: '100%'
+        }}>
+          <div style={{ overflow: 'hidden' }}>
+            <div style={{ 
+              width: '100%', 
+              padding: menuOpen ? '16px 0 24px 0' : '0', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '16px', 
+              borderTop: menuOpen ? '1px solid var(--border)' : '1px solid transparent',
+              opacity: menuOpen ? 1 : 0,
+              transition: 'all 0.3s ease',
+              pointerEvents: menuOpen ? 'auto' : 'none'
+            }}>
+              <button onClick={() => { setActiveTab("products"); setShowForm(false); setMenuOpen(false); }} style={{ textAlign: 'left', padding: '4px 12px', fontWeight: '600', color: activeTab === "products" && !showForm ? 'var(--primary)' : 'var(--text-muted)' }}>📦 Products</button>
+              <button onClick={() => { setShowForm(true); setEditProduct(null); setActiveTab("products"); setMenuOpen(false); }} style={{ textAlign: 'left', padding: '4px 12px', fontWeight: '600', color: showForm && !editProduct ? 'var(--primary)' : 'var(--text-muted)' }}>➕ Add Product</button>
+              <button onClick={() => { setActiveTab("bulk"); setShowForm(false); setMenuOpen(false); }} style={{ textAlign: 'left', padding: '4px 12px', fontWeight: '600', color: activeTab === "bulk" && !showForm ? 'var(--primary)' : 'var(--text-muted)' }}>{"\uD83D\uDCE5"} Bulk Upload</button>
+              <button onClick={() => { setActiveTab("bill"); setShowForm(false); setMenuOpen(false); }} style={{ textAlign: 'left', padding: '4px 12px', fontWeight: '600', color: activeTab === "bill" && !showForm ? 'var(--primary)' : 'var(--text-muted)' }}>🧾 Billing (POS)</button>
+              <button onClick={() => { handleLogout(); setMenuOpen(false); }} style={{ textAlign: 'left', padding: '4px 12px', fontWeight: '600', color: 'var(--red)' }}>🚪 Logout</button>
+            </div>
+          </div>
+        </div>
       </nav>
       
       {/* Main Content Area */}
