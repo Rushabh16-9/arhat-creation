@@ -12,7 +12,30 @@ export async function POST(request) {
     const { action, imageBase64, mimeType = 'image/jpeg', productName, productDescription } = body;
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
+
+    // Try primary model, fall back if unavailable
+    async function getModel(modelName) {
+      return genAI.getGenerativeModel({ model: modelName });
+    }
+
+    async function generateWithFallback(parts) {
+      const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+      let lastError;
+      for (const modelName of models) {
+        try {
+          const m = await getModel(modelName);
+          const result = await m.generateContent(parts);
+          return result;
+        } catch (err) {
+          if (err?.status === 503 || err?.message?.includes('503') || err?.message?.includes('overloaded') || err?.message?.includes('high demand')) {
+            lastError = err;
+            continue; // try next model
+          }
+          throw err; // non-503 error, rethrow
+        }
+      }
+      throw lastError;
+    }
 
     if (action === 'enhance') {
       // Use Gemini to analyze and provide enhancement instructions, 
@@ -21,7 +44,7 @@ export async function POST(request) {
         inlineData: { data: imageBase64, mimeType }
       };
 
-      const result = await model.generateContent([
+      const result = await generateWithFallback([
         imagePart,
         `You are a professional product photographer and e-commerce expert. 
         Analyze this product image and provide:
@@ -60,7 +83,7 @@ export async function POST(request) {
         inlineData: { data: imageBase64, mimeType }
       };
 
-      const result = await model.generateContent([
+      const result = await generateWithFallback([
         imagePart,
         `Analyze this product image. 
         Describe the main product/subject in detail.
@@ -97,7 +120,7 @@ export async function POST(request) {
         inlineData: { data: imageBase64, mimeType }
       };
 
-      const result = await model.generateContent([
+      const result = await generateWithFallback([
         imagePart,
         `You are a luxury product presenter. 
         Create an engaging 360-degree product presentation script for this product.
@@ -182,7 +205,7 @@ Respond ONLY with valid JSON in this exact format:
   ]
 }`;
 
-      const result = await model.generateContent([prompt]);
+      const result = await generateWithFallback([prompt]);
       const text = result.response.text();
       let parsed;
       try {
