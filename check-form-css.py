@@ -1,11 +1,12 @@
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-with open('app/globals.css', 'r', encoding='utf-8') as f:
+with open('app/admin/page.js', 'r', encoding='utf-8') as f:
     lines = f.readlines()
 
 for i, line in enumerate(lines):
-    if '.form-grid' in line:
-        for j in range(i, i+15):
+    if 'Product Name' in line and '<input' in line:
+        start = max(0, i-5)
+        for j in range(start, start+15):
             print(f'{j+1}: {lines[j].strip()}')
         break
