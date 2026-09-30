@@ -1,6 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 
 
@@ -92,221 +98,170 @@ function MarqueeCarousel({ products }) {
 
 // ===== PRODUCT 360 MODAL =====
 
-function Product360Modal({ product, onClose }) {
-
-  const [location, setLocation] = useState('');
-
+function Product360Modal({ product, onClose, onAddToCart, userProfile, onSignIn }) {
+  const [location, setLocation] = useState(userProfile?.address || '');
   const [qty, setQty] = useState(1);
   const [isExpanded, setIsExpanded] = useState(false);
-
   const [view360Data, setView360Data] = useState(null);
-
   const [loadingGemini, setLoadingGemini] = useState(false);
-
+  const [showAddressBanner, setShowAddressBanner] = useState(false);
   const WA = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919082799791';
 
-
+  // Detect if user changed their saved address
+  const isAddressModified = userProfile?.address && location !== userProfile.address && location.trim() !== '';
+  const locationEmpty = !location.trim();
 
   useEffect(() => {
-
     document.body.style.overflow = 'hidden';
-
-    
-
     return () => { document.body.style.overflow = ''; };
-
   }, []);
 
-
-
-  
-
-
-
   function handleBuyNow() {
-
-    if (!location.trim()) {
-
-      alert('Please enter your delivery location');
-
-      return;
-
-    }
-
+    if (locationEmpty) return;
     const discount = product.original_price ? Math.round((1 - product.price / product.original_price) * 100) : 0;
-
     const msg = [
-
-        ' *New Order - Arhat Creation*',
-
-        '',
-
-        ` *Product:* ${product.name}`,
-
-        `️ *Category:* ${product.category || 'General'}`,
-
-        ` *Price:* {"₹"}${product.price.toLocaleString('en-IN')}${discount ? ` (${discount}% OFF)` : ''}`,
-
-        ` *Quantity:* ${qty}`,
-
-        ` *Total:* {"₹"}${(product.price * qty).toLocaleString('en-IN')}`,
-
-        '',
-
-        ` *Delivery Location:* ${location}`,
-
-        '',
-
-        ` *Stock Available:* ${product.stock > 0 ? product.stock + ' units' : 'Check availability'}`,
-
-        '',
-
-        `⏲️ *Order Time:* ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
-
-        '',
-
-        '--- Sent via Arhat Creation ---'
-
-      ].join('\n');
-
-    const url = `https://wa.me/${WA}?text=${encodeURIComponent(msg)}`;
-
-    window.open(url, '_blank');
-
+      `*NEW DIRECT ORDER*`,
+      `---------------------------------------`,
+      `*Product:* ${product.name}`,
+      `*Category:* ${product.category || 'General'}`,
+      `*Price:* \u20b9${product.price.toLocaleString('en-IN')}${discount ? ` (${discount}% OFF)` : ''}`,
+      `*Quantity:* ${qty}`,
+      `---------------------------------------`,
+      `*Total:* \u20b9${(product.price * qty).toLocaleString('en-IN')}`,
+      '',
+      `*Delivery Location:* ${location}`,
+      '',
+      `*Order Time:* ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
+      `---------------------------------------`,
+      `_Sent securely via Arhat Creation_`
+    ].join('\n');
+    window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`, '_blank');
   }
 
-
+  const handleAddToCartClick = () => {
+    if (locationEmpty) return;
+    onAddToCart(product, qty);
+  };
 
   const stockStatus = product.stock > 10 ? 'good' : product.stock > 0 ? 'low' : 'none';
-
-  const stockLabel = product.stock > 10 ? `✓ In Stock (${product.stock} units)` : product.stock > 0 ? `⚠ Only ${product.stock} left` : '✕ Out of Stock';
-
-
+  const stockLabel = product.stock > 10 ? `In Stock (${product.stock} units)` : product.stock > 0 ? `Only ${product.stock} left` : 'Out of Stock';
 
   return (
-
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-
       <div className="modal-box" style={{ position: 'relative' }}>
-
-        <button className="modal-close" onClick={onClose} aria-label="Close modal">✕</button>
-
+        <button className="modal-close" onClick={onClose} aria-label="Close modal">&times;</button>
         <div className="modal-inner">
-
-          
-
-          {/* Gallery Viewer */}
-
-          <div className="modal-gallery" style={{ padding: '24px', background: 'var(--bg3)', borderRadius: '24px', marginBottom: '24px' }}>
-
-            <div className="main-image-wrap" style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
-
+          {/* Gallery */}
+          <div className="modal-gallery" style={{ padding: '20px', background: 'var(--bg3)', borderRadius: '20px', marginBottom: '20px' }}>
+            <div className="main-image-wrap" style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '14px', overflow: 'hidden' }}>
               {(product.enhanced_image_url || product.image_url) ? (
-
                 <img src={product.enhanced_image_url || product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-
               ) : (
-
-                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(155deg,#1a2535,#0d1520)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 60 }}>✨</div>
-
+                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(155deg,#1a2535,#0d1520)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 60 }}>*</div>
               )}
-
             </div>
-
-
-
           </div>
 
-{/* Details Panel */}
-
+          {/* Details */}
           <div className="modal-details">
-
             {product.category && <div className="modal-category">{product.category}</div>}
-
             <h2 className="modal-title">{product.name}</h2>
-
-                        {product.description && (
+            {product.description && (
               <div style={{ marginBottom: '8px' }}>
-                <p className="modal-desc" style={{ display: isExpanded ? 'block' : '-webkit-box', WebkitLineClamp: isExpanded ? 'unset' : 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0, transition: 'all 0.3s ease' }}>{product.description}</p>
+                <p className="modal-desc" style={{ display: isExpanded ? 'block' : '-webkit-box', WebkitLineClamp: isExpanded ? 'unset' : 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: 0 }}>{product.description}</p>
                 {product.description.length > 100 && (
-                  <button onClick={() => setIsExpanded(!isExpanded)} style={{ background: 'transparent', border: 'none', color: 'var(--primary)', fontSize: '13px', fontWeight: '700', cursor: 'pointer', padding: 0, marginTop: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <button onClick={() => setIsExpanded(!isExpanded)} style={{ background: 'transparent', border: 'none', color: 'var(--primary)', fontSize: '13px', fontWeight: '700', cursor: 'pointer', padding: 0, marginTop: '6px' }}>
                     {isExpanded ? 'Read Less' : 'Read More'}
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><path d="m6 9 6 6 6-6"></path></svg>
                   </button>
                 )}
               </div>
             )}
 
             <div className="modal-price-row" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-
-              <span className="modal-price" style={{ fontSize: '28px', fontWeight: '800', color: 'var(--primary)' }}>{"₹"}{product.price?.toLocaleString('en-IN')}</span>
-
+              <span className="modal-price" style={{ fontSize: '28px', fontWeight: '800', color: 'var(--primary)' }}>{"\u20b9"}{product.price?.toLocaleString('en-IN')}</span>
               {product.original_price && (
-
                 <>
-
-                  <span className="modal-orig-price" style={{ textDecoration: 'line-through', color: 'var(--text-dim)', fontSize: '18px', fontWeight: '600' }}>{"₹"}{product.original_price.toLocaleString('en-IN')}</span>
-
-                  <span className="modal-discount" style={{ background: '#10b981', color: '#fff', padding: '4px 10px', borderRadius: '8px', fontSize: '13px', fontWeight: '700' }}>
-
-                    {Math.round((1 - product.price / product.original_price) * 100)}% OFF
-
-                  </span>
-
+                  <span style={{ textDecoration: 'line-through', color: 'var(--text-dim)', fontSize: '18px' }}>{"\u20b9"}{product.original_price.toLocaleString('en-IN')}</span>
+                  <span style={{ background: '#10b981', color: '#fff', padding: '4px 10px', borderRadius: '8px', fontSize: '13px', fontWeight: '700' }}>{Math.round((1 - product.price / product.original_price) * 100)}% OFF</span>
                 </>
-
               )}
-
             </div>
-
-            
 
             <div className="modal-divider" />
 
-                        <div className="order-section" style={{ background: '#fff', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9', marginTop: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                </div>
-                <h4 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>Place Your Order</h4>
-              </div>
-              
-              <div style={{ position: 'relative', marginBottom: '16px' }}>
-                <div style={{ position: 'absolute', left: '16px', top: '16px', color: '#94a3b8' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                </div>
-                <input
-                  type="text"
+            {/* Order Section */}
+            <div className="order-section" style={{ background: '#fff', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9', marginTop: '16px' }}>
+              <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>Place Your Order</h4>
+
+              {/* Delivery Address */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>Delivery Address *</label>
+                <textarea
                   placeholder="Enter your full delivery address..."
                   value={location}
                   onChange={e => setLocation(e.target.value)}
-                  style={{ width: '100%', padding: '16px 16px 16px 48px', fontSize: '15px', color: '#334155', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '12px', outline: 'none', transition: 'all 0.2s', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}
-                  onFocus={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.boxShadow = '0 0 0 4px rgba(0, 150, 255, 0.1)'; }}
-                  onBlur={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.02)'; }}
+                  rows={2}
+                  style={{ width: '100%', padding: '12px 14px', fontSize: '14px', color: '#334155', background: '#f8fafc', border: `1.5px solid ${locationEmpty ? '#fca5a5' : isAddressModified ? '#fbbf24' : '#cbd5e1'}`, borderRadius: '12px', outline: 'none', resize: 'none', transition: 'border-color 0.2s', boxSizing: 'border-box' }}
+                  onFocus={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = '#fff'; }}
+                  onBlur={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = locationEmpty ? '#fca5a5' : isAddressModified ? '#fbbf24' : '#cbd5e1'; }}
                 />
+                {locationEmpty && <p style={{ fontSize: '11px', color: '#ef4444', margin: '4px 0 0 2px', fontWeight: '600' }}>Address is required to place order</p>}
+
+                {/* Address action banner */}
+                {isAddressModified && (
+                  <div style={{ marginTop: '8px', padding: '10px 12px', background: '#fffbeb', border: '1px solid #fbbf24', borderRadius: '10px', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12px', color: '#92400e', flex: 1, minWidth: '120px' }}>You changed your address.</span>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button onClick={() => onSignIn('saveAddress', location)} style={{ fontSize: '11px', padding: '5px 10px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: '7px', cursor: 'pointer', fontWeight: '700' }}>Save to Profile</button>
+                      <button onClick={() => {}} style={{ fontSize: '11px', padding: '5px 10px', background: '#fff', color: '#0f172a', border: '1px solid #cbd5e1', borderRadius: '7px', cursor: 'pointer', fontWeight: '600' }}>Use Just This Time</button>
+                    </div>
+                  </div>
+                )}
+
+                {!userProfile?.name && (
+                  <button onClick={() => onSignIn()} style={{ marginTop: '8px', fontSize: '12px', color: 'var(--primary)', fontWeight: '700', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Sign in to auto-fill your address</button>
+                )}
               </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', background: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: '15px', fontWeight: '700', color: '#334155' }}>Quantity</span>
-                <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', borderRadius: '999px', border: '1px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-                  <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '500', color: '#475569', cursor: 'pointer', background: 'transparent', border: 'none', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#f1f5f9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>−</button>
-                  <span style={{ width: '40px', textAlign: 'center', fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{qty}</span>
-                  <button onClick={() => setQty(q => q + 1)} style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '500', color: '#475569', cursor: 'pointer', background: 'transparent', border: 'none', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#f1f5f9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>+</button>
+              {/* Quantity */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', background: '#f8fafc', padding: '14px 16px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700', color: '#334155' }}>Quantity</span>
+                <div style={{ display: 'flex', alignItems: 'center', background: '#fff', borderRadius: '999px', border: '1px solid #cbd5e1', overflow: 'hidden' }}>
+                  <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', color: '#475569', cursor: 'pointer', background: 'transparent', border: 'none' }}>-</button>
+                  <span style={{ width: '36px', textAlign: 'center', fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>{qty}</span>
+                  <button onClick={() => setQty(q => q + 1)} style={{ width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', color: '#475569', cursor: 'pointer', background: 'transparent', border: 'none' }}>+</button>
                 </div>
               </div>
-              
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', padding: '0 4px' }}>
-                <span style={{ fontSize: '15px', color: '#64748b', fontWeight: '500' }}>Total Amount</span>
-                <span style={{ color: '#0f172a', fontSize: '24px', fontWeight: '800' }}>{"₹"}{(product.price * qty).toLocaleString('en-IN')}</span>
+
+              {/* Total */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 2px' }}>
+                <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>Total Amount</span>
+                <span style={{ color: '#0f172a', fontSize: '22px', fontWeight: '800' }}>{"\u20b9"}{(product.price * qty).toLocaleString('en-IN')}</span>
               </div>
-              
-              <button className="buy-btn" onClick={handleBuyNow} disabled={product.stock === 0} style={{ width: '100%', padding: '16px', borderRadius: '16px', background: 'var(--primary)', color: '#fff', fontSize: '16px', fontWeight: '800', border: 'none', cursor: 'pointer', boxShadow: '0 8px 24px rgba(0, 150, 255, 0.3)', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(0, 150, 255, 0.4)'; }} onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 150, 255, 0.3)'; }}>
-                {product.stock === 0 ? 'Out of Stock' : 'Order via WhatsApp'}
-                {product.stock !== 0 && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>}
-              </button>
-              <p style={{ fontSize: '12px', color: '#94a3b8', textAlign: 'center', marginTop: '16px', fontWeight: '500' }}>
-                You will be redirected to WhatsApp to confirm your order
-              </p>
+
+              {/* Buttons */}
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={handleAddToCartClick}
+                  disabled={locationEmpty}
+                  title={locationEmpty ? 'Enter delivery address first' : 'Add to Cart'}
+                  style={{ flex: '1 1 120px', padding: '14px', borderRadius: '14px', background: locationEmpty ? '#f1f5f9' : 'var(--bg3)', color: locationEmpty ? '#94a3b8' : 'var(--primary)', fontSize: '14px', fontWeight: '800', border: `2px solid ${locationEmpty ? '#e2e8f0' : 'var(--primary)'}`, cursor: locationEmpty ? 'not-allowed' : 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                >
+                  Add to Cart
+                </button>
+                <button
+                  onClick={handleBuyNow}
+                  disabled={locationEmpty}
+                  title={locationEmpty ? 'Enter delivery address first' : 'Buy Now via WhatsApp'}
+                  style={{ flex: '1 1 120px', padding: '14px', borderRadius: '14px', background: locationEmpty ? '#94a3b8' : 'var(--primary)', color: '#fff', fontSize: '14px', fontWeight: '800', border: 'none', cursor: locationEmpty ? 'not-allowed' : 'pointer', boxShadow: locationEmpty ? 'none' : '0 8px 24px rgba(0,150,255,0.25)', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                >
+                  Buy Now
+                </button>
+              </div>
+              {locationEmpty && (
+                <p style={{ fontSize: '12px', color: '#ef4444', textAlign: 'center', marginTop: '10px', fontWeight: '600' }}>Please enter a delivery address above to continue</p>
+              )}
+              {!locationEmpty && <p style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center', marginTop: '10px' }}>Buy Now opens WhatsApp instantly</p>}
             </div>
           </div>
         </div>
@@ -371,6 +326,269 @@ function Toast({ message, type, show }) {
 
 
 
+// ===== USER AUTH / PROFILE MODAL =====
+function UserProfileModal({ isOpen, onClose, userProfile, setUserProfile, showToast, initialMode, initialAddress }) {
+  // 'login' | 'sent' | 'profile'
+  const [authStep, setAuthStep] = useState('login');
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(prev => {
+        const base = { ...userProfile };
+        if (initialMode === 'saveAddress' && initialAddress) {
+          base.address = initialAddress;
+        }
+        return base;
+      });
+      setAuthStep(userProfile.name ? 'profile' : 'login');
+      setEmail('');
+    }
+  }, [isOpen, userProfile, initialMode, initialAddress]);
+
+  // Listen for magic-link sign-in and auto-advance to profile step
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+        setAuthStep('profile');
+        showToast('Signed in! Please complete your profile.', 'success', 3000);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSendLink = async () => {
+    if (!email.trim()) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: { shouldCreateUser: true }
+      });
+      if (error) throw error;
+      setAuthStep('sent');
+      showToast('Sign-in link sent! Check your inbox.', 'success', 4000);
+    } catch (e) {
+      showToast(e.message || 'Failed to send link. Try again.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = () => {
+    setUserProfile(formData);
+    localStorage.setItem('arhat_user_profile', JSON.stringify(formData));
+    showToast('Profile saved!', 'success', 2000);
+    onClose();
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUserProfile({ name: '', phone: '', address: '' });
+    localStorage.removeItem('arhat_user_profile');
+    showToast('Signed out.', 'info', 2000);
+    setAuthStep('login');
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  const inputStyle = {
+    width: '100%', padding: '14px 16px', borderRadius: '12px',
+    border: '1.5px solid var(--border)', outline: 'none', fontSize: '15px',
+    boxSizing: 'border-box', transition: 'border-color 0.2s', fontFamily: 'inherit'
+  };
+  const btnPrimary = {
+    width: '100%', padding: '15px', background: 'var(--primary)', color: '#fff',
+    fontSize: '15px', fontWeight: '800', border: 'none', borderRadius: '12px',
+    cursor: loading ? 'not-allowed' : 'pointer', marginTop: '8px', opacity: loading ? 0.7 : 1
+  };
+
+  return (
+    <>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 9998, backdropFilter: 'blur(4px)' }} onClick={onClose} />
+      <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'calc(100% - 32px)', maxWidth: '400px', background: '#fff', borderRadius: '24px', zIndex: 9999, padding: '28px', boxShadow: '0 24px 48px rgba(0,0,0,0.15)', maxHeight: '90vh', overflowY: 'auto' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: 'var(--primary)' }}>
+            {authStep === 'login' ? 'Sign In' : authStep === 'sent' ? 'Check Your Email' : (userProfile.name ? 'Your Profile' : 'Complete Profile')}
+          </h2>
+          <button onClick={onClose} style={{ background: 'var(--bg3)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'grid', placeItems: 'center', fontSize: '18px', color: 'var(--text)' }}>&times;</button>
+        </div>
+
+        {/* Step 1: Enter Email */}
+        {authStep === 'login' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0, lineHeight: 1.6 }}>
+              Enter your email — we'll send you a secure sign-in link. No password needed!
+            </p>
+            <input
+              type="email"
+              placeholder="your@email.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSendLink()}
+              style={inputStyle}
+              autoFocus
+            />
+            <button onClick={handleSendLink} disabled={loading} style={btnPrimary}>
+              {loading ? 'Sending...' : 'Send Sign-In Link'}
+            </button>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', margin: 0 }}>
+              Already have a profile saved?{' '}
+              <button onClick={() => setAuthStep('profile')} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer', fontSize: '12px', padding: 0 }}>
+                Skip to profile
+              </button>
+            </p>
+          </div>
+        )}
+
+        {/* Step 2: Email Sent — waiting */}
+        {authStep === 'sent' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', textAlign: 'center' }}>
+            {/* Icon */}
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+            </div>
+            <div>
+              <p style={{ fontWeight: '800', fontSize: '16px', color: '#0f172a', margin: '0 0 8px 0' }}>Link sent to</p>
+              <p style={{ fontWeight: '700', fontSize: '15px', color: 'var(--primary)', margin: 0, wordBreak: 'break-all' }}>{email}</p>
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0, lineHeight: 1.6 }}>
+              Click the link in your email to sign in. This tab will update automatically once you click it.
+            </p>
+            <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px', fontSize: '13px', color: '#64748b' }}>
+              Didn't get the email? Check your spam folder.
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={handleSendLink} disabled={loading} style={{ flex: 1, padding: '12px', background: 'var(--bg3)', color: 'var(--primary)', border: '1.5px solid var(--primary)', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+                {loading ? 'Sending...' : 'Resend Link'}
+              </button>
+              <button onClick={() => setAuthStep('login')} style={{ flex: 1, padding: '12px', background: 'var(--bg3)', color: 'var(--text-muted)', border: '1.5px solid var(--border)', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+                Change Email
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Profile */}
+        {authStep === 'profile' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: 'var(--text)' }}>Full Name</label>
+              <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="E.g. Rahul Sharma" style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: 'var(--text)' }}>Phone Number</label>
+              <input type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="E.g. +91 98765 43210" style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: 'var(--text)' }}>Default Delivery Address</label>
+              <textarea value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} placeholder="Enter your full address..." rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+            </div>
+            <button onClick={handleSaveProfile} style={btnPrimary}>Save Profile</button>
+            <button onClick={handleSignOut} style={{ width: '100%', padding: '12px', background: 'none', border: '1.5px solid #fca5a5', color: '#ef4444', fontSize: '14px', fontWeight: '700', borderRadius: '12px', cursor: 'pointer', marginTop: '4px' }}>Sign Out</button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+// ===== CART SIDEBAR =====
+function CartSidebar({ cart, setCart, isOpen, onClose, WA, userProfile }) {
+  const cartTotal = cart.reduce((sum, item) => sum + (item.product.price * item.qty), 0);
+
+  const handleCheckout = () => {
+    if (cart.length === 0) return;
+    const msg = [
+      `*NEW BULK CART ORDER*`,
+      `---------------------------------------`,
+      ...cart.map(item => `*${item.qty}x* ${item.product.name} -> ₹${(item.product.price * item.qty).toLocaleString('en-IN')}`),
+      `---------------------------------------`,
+      `*Grand Total:* ₹${cartTotal.toLocaleString('en-IN')}`,
+      '',
+      ...(userProfile?.address ? [`*Delivery Location:* ${userProfile.address}`, ''] : []),
+      `*Order Time:* ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
+      '',
+      `*Next Step:* ${userProfile?.address ? 'Please confirm if you want delivery to your saved address above.' : 'Please reply to this message with your full delivery address to confirm your order!'}`,
+      `---------------------------------------`,
+      `_Sent securely via Arhat Creation_`
+    ].join('\n');
+    window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  const updateQty = (id, delta) => {
+    setCart(prev => {
+      return prev.map(item => {
+        if (item.product.id === id) {
+          const newQty = Math.max(1, item.qty + delta);
+          return { ...item, qty: newQty };
+        }
+        return item;
+      });
+    });
+  };
+
+  const removeItem = (id) => setCart(prev => prev.filter(item => item.product.id !== id));
+
+  return (
+    <>
+      {isOpen && <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9998, backdropFilter: 'blur(4px)' }} onClick={onClose} />}
+      <div style={{ position: 'fixed', top: 0, right: isOpen ? 0 : '-400px', width: '100%', maxWidth: '400px', height: '100vh', background: '#fff', zIndex: 9999, transition: 'right 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)', display: 'flex', flexDirection: 'column', boxShadow: '-10px 0 30px rgba(0,0,0,0.1)' }}>
+        <div style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--primary)', margin: 0 }}>Your Cart</h2>
+          <button onClick={onClose} style={{ background: 'var(--bg3)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>✕</button>
+        </div>
+        
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {cart.length === 0 ? (
+            <div style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '40px' }}>Your cart is empty.</div>
+          ) : (
+            cart.map(item => (
+              <div key={item.product.id} style={{ display: 'flex', gap: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
+                <div style={{ width: '72px', height: '72px', borderRadius: '12px', background: 'var(--bg3)', overflow: 'hidden', flexShrink: 0 }}>
+                  <img src={item.product.enhanced_image_url || item.product.image_url} alt={item.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '700', color: 'var(--primary)' }}>{item.product.name}</h4>
+                    <button onClick={() => removeItem(item.product.id)} style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Remove</button>
+                  </div>
+                  <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--primary)', marginBottom: '8px' }}>{"₹"}{item.product.price.toLocaleString('en-IN')}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', borderRadius: '8px', border: '1px solid var(--border)', width: 'fit-content' }}>
+                    <button onClick={() => updateQty(item.product.id, -1)} style={{ padding: '4px 12px', background: 'none', border: 'none', cursor: 'pointer' }}>-</button>
+                    <span style={{ fontSize: '13px', fontWeight: '700', width: '20px', textAlign: 'center' }}>{item.qty}</span>
+                    <button onClick={() => updateQty(item.product.id, 1)} style={{ padding: '4px 12px', background: 'none', border: 'none', cursor: 'pointer' }}>+</button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {cart.length > 0 && (
+          <div style={{ padding: '24px', borderTop: '1px solid var(--border)', background: '#f8fafc' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '18px', fontWeight: '800', color: 'var(--primary)' }}>
+              <span>Total</span>
+              <span>{"₹"}{cartTotal.toLocaleString('en-IN')}</span>
+            </div>
+            <button onClick={handleCheckout} style={{ width: '100%', padding: '16px', background: 'var(--primary)', color: '#fff', fontSize: '16px', fontWeight: '700', borderRadius: '12px', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center' }}>
+              Checkout via WhatsApp
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+            </button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 // ===== MAIN PAGE =====
 
 export default function StorePage() {
@@ -385,10 +603,58 @@ export default function StorePage() {
   const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
 
   const [searchQuery, setSearchQuery] = useState('');
-
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [sortOrder, setSortOrder] = useState('featured');
+  
+  const [cart, setCart] = useState(() => {
+    if (typeof window === 'undefined') return [];
+    try { return JSON.parse(localStorage.getItem('arhat_cart') || '[]'); } catch { return []; }
+  });
+  const [cartOpen, setCartOpen] = useState(false);
+
+  const [userProfile, setUserProfile] = useState({ name: '', phone: '', address: '' });
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileMode, setProfileMode] = useState(null);
+  const [profileInitAddr, setProfileInitAddr] = useState('');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('arhat_user_profile');
+    if (saved) { try { setUserProfile(JSON.parse(saved)); } catch (e) {} }
+    // Restore Supabase session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user && !saved) {
+        const meta = session.user.user_metadata || {};
+        setUserProfile({ name: meta.name || '', phone: session.user.phone || '', address: meta.address || '' });
+      }
+    });
+  }, []);
+
+  // Persist cart to localStorage on every change
+  useEffect(() => {
+    localStorage.setItem('arhat_cart', JSON.stringify(cart));
+  }, [cart]);
+
+  const openSignIn = (mode, addr) => {
+    setProfileMode(mode || null);
+    setProfileInitAddr(addr || '');
+    setProfileOpen(true);
+  };
 
   const WA = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919082799791';
+
+  const handleAddToCart = (product, qty) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.product.id === product.id);
+      if (existing) {
+        return prev.map(item => item.product.id === product.id 
+          ? { ...item, qty: item.qty + qty } 
+          : item);
+      }
+      return [...prev, { product, qty }];
+    });
+    showToast(`${product.name} added to cart!`, 'success', 2000);
+    setSelectedProduct(null);
+  };
 
 
 
@@ -492,16 +758,16 @@ export default function StorePage() {
 
 
 
-  const categories = ['All', ...new Set(products.map(p => p.category).filter(Boolean))];
+  const categories = ["All", "Pooja & Samayik Upkaran", "Mens Wear & Accessories", "Gift & Tapasvi Hampers", "Attar", "Dry Fruits", "Other"];
 
   const filteredProducts = products.filter(p => {
-
     const matchesSearch = !searchQuery || p.name?.toLowerCase().includes(searchQuery.toLowerCase()) || p.description?.toLowerCase().includes(searchQuery.toLowerCase());
-
     const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
-
     return matchesSearch && matchesCategory;
-
+  }).sort((a, b) => {
+    if (sortOrder === 'price-asc') return a.price - b.price;
+    if (sortOrder === 'price-desc') return b.price - a.price;
+    return 0;
   });
 
 
@@ -533,15 +799,18 @@ export default function StorePage() {
 
           <ul className="nav-links" role="list">
             <li><a href="#products">Products</a></li>
-            <li><a href="#categories">Categories</a></li>
-            <li><a href={`https://wa.me/${WA}`} target="_blank" rel="noopener noreferrer">Contact</a></li>
+
           </ul>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <a href={`https://wa.me/${WA}`} target="_blank" rel="noopener noreferrer" className="glow-btn nav-cta" id="nav-whatsapp-btn" style={{ display: 'flex', alignItems: 'center', gap: '6px', height: '38px', padding: '0 16px' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
-              <span>Chat</span>
-            </a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button onClick={() => openSignIn()} style={{ display: 'flex', alignItems: 'center', gap: '6px', height: '38px', padding: '0 14px', background: 'var(--surface)', color: 'var(--primary)', border: '1.5px solid var(--border)', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              <span>{userProfile.name || 'Sign In'}</span>
+            </button>
+            <button onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '6px', height: '38px', padding: '0 14px', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 14, position: 'relative', whiteSpace: 'nowrap' }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+              <span>Cart{cart.length > 0 ? ` (${cart.length})` : ''}</span>
+            </button>
             
             <button className="mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)} style={{ background: 'none', border: 'none', padding: '8px', cursor: 'pointer', display: 'none' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -706,22 +975,27 @@ export default function StorePage() {
         <div className="filter-row" style={{ display: 'flex', gap: 12, marginBottom: 32, flexWrap: 'wrap', alignItems: 'center' }}>
 
           <input
-
             type="search"
-
             placeholder="Search products..."
-
             value={searchQuery}
-
             onChange={e => setSearchQuery(e.target.value)}
-
             style={{ flex: '1 1 200px' }} className="form-input search-input"
-
             id="product-search"
-
           />
+          <select 
+            value={sortOrder} 
+            onChange={e => setSortOrder(e.target.value)} 
+            className="form-input" 
+            style={{ flex: '0 0 auto', padding: '12px 16px', background: '#fff', cursor: 'pointer', borderRadius: 10, fontSize: 14 }}
+          >
+            <option value="featured">Sort: Featured</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+          </select>
 
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }} id="categories" role="group" aria-label="Categories">
+          <div className="filter-chips-wrapper" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, width: '100%', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }} id="categories" role="group" aria-label="Categories">
+            <style>{`.filter-chips-wrapper::-webkit-scrollbar { display: none; }`}</style>
+
 
             {categories.map(cat => (
 
@@ -734,17 +1008,13 @@ export default function StorePage() {
                 id={`cat-${cat.toLowerCase()}`}
 
                 style={{
-
-                  padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 500,
-
-                  background: selectedCategory === cat ? 'rgba(0,212,255,.15)' : 'rgba(255,255,255,.04)',
-
-                  border: `1px solid ${selectedCategory === cat ? 'rgba(0,212,255,.4)' : 'rgba(255,255,255,.08)'}`,
-
-                  color: selectedCategory === cat ? 'var(--accent2)' : 'rgba(255,255,255,.7)',
-
-                  cursor: 'pointer', transition: 'all .2s', whiteSpace: 'nowrap'
-
+                  padding: '10px 20px', borderRadius: '30px', fontSize: 14, fontWeight: 600,
+                  background: selectedCategory === cat ? 'var(--primary)' : 'var(--surface)',
+                  border: `1px solid ${selectedCategory === cat ? 'var(--primary)' : 'var(--border)'}`,
+                  color: selectedCategory === cat ? '#fff' : 'var(--text-muted)',
+                  cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)', 
+                  whiteSpace: 'nowrap',
+                  boxShadow: selectedCategory === cat ? '0 8px 16px rgba(15,23,42,0.15)' : '0 2px 8px rgba(0,0,0,0.04)'
                 }}
 
               >
@@ -894,16 +1164,33 @@ export default function StorePage() {
       {/* 360 MODAL */}
 
       {selectedProduct && (
-
         <Product360Modal
-
           product={selectedProduct}
-
           onClose={() => setSelectedProduct(null)}
-
+          onAddToCart={handleAddToCart}
+          userProfile={userProfile}
+          onSignIn={openSignIn}
         />
-
       )}
+
+      <CartSidebar 
+        cart={cart} 
+        setCart={setCart} 
+        isOpen={cartOpen} 
+        onClose={() => setCartOpen(false)} 
+        WA={WA} 
+        userProfile={userProfile}
+      />
+      
+      <UserProfileModal 
+        isOpen={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        userProfile={userProfile}
+        setUserProfile={setUserProfile}
+        showToast={showToast}
+        initialMode={profileMode}
+        initialAddress={profileInitAddr}
+      />
 
 
 

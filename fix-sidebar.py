@@ -31,7 +31,7 @@ new_sidebar = """        <ul className="sidebar-nav">
           </li>
           <li>
             <button onClick={() => { setActiveTab("bill"); setShowForm(false); }} className={activeTab === "bill" && !showForm ? "active" : ""} id="tab-billing">
-              ?? Billing (POS)
+              ?? Billing 
             </button>
           </li>
           <li>

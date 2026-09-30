@@ -4,10 +4,77 @@ import { removeBackground as imglyRemoveBackground } from '@imgly/background-rem
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
-const CATEGORIES = ["Skincare", "Haircare", "Makeup", "Fragrance", "Wellness", "Accessories", "Clothing", "Electronics", "Food", "Other"];
+const CATEGORIES = ["Pooja & Samayik Upkaran", "Mens Wear & Accessories", "Gift & Tapasvi Hampers", "Attar", "Dry Fruits", "Other"];
 
 function Toast({ message, type, show }) {
   return <div className={`toast ${type} ${show ? "show" : ""}`} role="alert">{message}</div>;
+}
+
+function CustomDropdown({ value, onChange, options, placeholder, id }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
+      <div 
+        id={id}
+        className="form-input" 
+        style={{ 
+          cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+          background: '#fff', border: open ? '2px solid var(--primary)' : '2px solid transparent', 
+          boxShadow: '0 2px 10px rgba(0,0,0,0.02)', padding: '14px 18px', fontSize: 16, borderRadius: 10,
+          transition: 'border 0.2s'
+        }}
+        onClick={() => setOpen(!open)}
+      >
+        <span style={{ color: value ? 'var(--text)' : 'var(--text-dim)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {value || placeholder}
+        </span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0, color: 'var(--text-muted)' }}>
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
+      
+      {open && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 8, background: '#fff', border: '1px solid var(--border)', borderRadius: 12, boxShadow: '0 12px 40px rgba(0,0,0,0.1)', zIndex: 100, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ maxHeight: 240, overflowY: 'auto', padding: '6px' }}>
+            {options.map(opt => {
+              const val = typeof opt === 'object' ? opt.value : opt;
+              const label = typeof opt === 'object' ? opt.label : opt;
+              const isSelected = value === val;
+              return (
+                <div 
+                  key={val}
+                  style={{ 
+                    padding: '12px 16px', cursor: 'pointer', borderRadius: 8,
+                    background: isSelected ? 'var(--bg3)' : 'transparent', 
+                    fontWeight: isSelected ? 700 : 500, 
+                    color: isSelected ? 'var(--primary)' : 'var(--text)', 
+                    transition: 'all 0.15s' 
+                  }}
+                  onClick={() => { onChange(val); setOpen(false); }}
+                  onMouseEnter={e => e.target.style.background = isSelected ? 'var(--bg3)' : '#f8fafc'}
+                  onMouseLeave={e => e.target.style.background = isSelected ? 'var(--bg3)' : 'transparent'}
+                >
+                  {label}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function StatsBar({ products }) {
@@ -536,10 +603,13 @@ function ProductForm({ editProduct, onSave, onCancel, showToast }) {
           </div>
           <div className="form-field">
             <label className="form-label" htmlFor="product-category">Category</label>
-            <select id="product-category" className="form-select" value={category} onChange={e => setCategory(e.target.value)}>
-              <option value="">Select category...</option>
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <CustomDropdown 
+              id="product-category" 
+              value={category} 
+              onChange={setCategory} 
+              options={CATEGORIES} 
+              placeholder="Select category..." 
+            />
           </div>
           <div className="form-actions" style={{ gridColumn: "1/-1" }}>
             <button className="glow-btn save-btn" onClick={handleSave} disabled={saving} id="save-product-btn">
@@ -559,6 +629,7 @@ function BillingSystem({ products, onUpdateStock, showToast }) {
   const [cart, setCart] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState("");
   const [qty, setQty] = useState(1);
+  const [receiverName, setReceiverName] = useState("");
   const [processing, setProcessing] = useState(false);
   
   // Bill History State
@@ -605,6 +676,10 @@ function BillingSystem({ products, onUpdateStock, showToast }) {
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
+    if (!receiverName.trim()) {
+      showToast("Please enter the receiver's name for the bill", "error");
+      return;
+    }
     setProcessing(true);
     try {
       for (const item of cart) {
@@ -622,6 +697,7 @@ function BillingSystem({ products, onUpdateStock, showToast }) {
       // Save Bill to History
       const newBill = {
         id: 'BILL-' + Date.now(),
+        receiverName: receiverName.trim(),
         date: new Date().toISOString(),
         items: cart,
         total: total
@@ -632,6 +708,7 @@ function BillingSystem({ products, onUpdateStock, showToast }) {
       
       showToast("Bill generated successfully! Saved to history.", "success");
       setCart([]);
+      setReceiverName("");
     } catch (err) {
       showToast(err.message, "error");
     } finally {
@@ -664,6 +741,7 @@ function BillingSystem({ products, onUpdateStock, showToast }) {
             <p>Official Tax Invoice / Bill of Supply</p>
           </div>
           <div class="bill-details">
+            <p><strong>Customer:</strong> ${bill.receiverName}</p>
             <p><strong>Bill No:</strong> ${bill.id}</p>
             <p><strong>Date:</strong> ${new Date(bill.date).toLocaleString('en-IN')}</p>
           </div>
@@ -717,7 +795,7 @@ function BillingSystem({ products, onUpdateStock, showToast }) {
               <div key={bill.id} style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', background: '#fff' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '1px dashed var(--border)', paddingBottom: '16px' }}>
                   <div>
-                    <div style={{ fontWeight: '700', fontSize: '15px' }}>{bill.id}</div>
+                    <div style={{ fontWeight: '700', fontSize: '15px' }}>{bill.receiverName || bill.id}</div>
                     <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{new Date(bill.date).toLocaleString('en-IN')}</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
@@ -744,7 +822,7 @@ function BillingSystem({ products, onUpdateStock, showToast }) {
   return (
     <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '32px', border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', boxSizing: 'border-box', width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: '700', color: 'var(--primary)' }}>Create New Bill (POS)</h2>
+        <h2 style={{ fontSize: '20px', fontWeight: '700', color: 'var(--primary)' }}>Create New Bill</h2>
         <button onClick={() => setShowHistory(true)} style={{ padding: '10px 20px', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
           View Bill History
@@ -759,16 +837,18 @@ function BillingSystem({ products, onUpdateStock, showToast }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-muted)' }}>Select Product</label>
-                <select 
+                <CustomDropdown 
                   value={selectedProductId} 
-                  onChange={e => setSelectedProductId(e.target.value)}
-                  style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', outline: 'none' }}
-                >
-                  <option value="">-- Choose Product --</option>
-                  {products.filter(p => p.stock > 0).map(p => (
-                    <option key={p.id} value={p.id}>{p.name} (₹{p.price}) - {p.stock} in stock</option>
-                  ))}
-                </select>
+                  onChange={setSelectedProductId} 
+                  options={[
+                    { value: "", label: "-- Choose Product --" },
+                    ...products.filter(p => p.stock > 0).map(p => ({
+                      value: p.id,
+                      label: `${p.name} (₹${p.price}) - ${p.stock} in stock`
+                    }))
+                  ]}
+                  placeholder="-- Choose Product --"
+                />
               </div>
               
               <div>
@@ -811,6 +891,18 @@ function BillingSystem({ products, onUpdateStock, showToast }) {
           <div style={{ border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden' }}>
             <div style={{ background: 'var(--surface)', padding: '16px 20px', borderBottom: '1px solid var(--border)', fontWeight: '600' }}>Current Bill</div>
             <div style={{ padding: '20px', background: 'var(--surface)' }}>
+              
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-muted)' }}>Customer Name</label>
+                <input 
+                  type="text" 
+                  placeholder="Enter receiver's name..." 
+                  value={receiverName} 
+                  onChange={e => setReceiverName(e.target.value)} 
+                  style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', outline: 'none' }}
+                />
+              </div>
+
               {cart.length === 0 ? (
                 <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>No items added yet</div>
               ) : (
@@ -1000,9 +1092,12 @@ function BulkUploadForm({ onSave, showToast }) {
            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
              <div className="form-field">
                <label className="form-label" style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</label>
-               <select className="form-input" style={{ fontSize: 16, padding: '14px 18px', background: '#fff', border: '2px solid transparent', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', cursor: 'pointer' }} value={current.category} onChange={e => updateCurrent("category", e.target.value)} onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = 'transparent'}>
-                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-               </select>
+               <CustomDropdown 
+                 value={current.category} 
+                 onChange={val => updateCurrent("category", val)} 
+                 options={CATEGORIES} 
+                 placeholder="Category" 
+               />
              </div>
              <div className="form-field">
                <label className="form-label" style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Stock</label>
@@ -1149,7 +1244,7 @@ export default function AdminPanel() {
           </li>
           <li>
         <button onClick={() => { setActiveTab("bill"); setShowForm(false); setMenuOpen(false); }} className={activeTab === "bill" ? "active" : ""} id="tab-billing">
-              🧾 Billing (POS)
+              🧾 Billing 
             </button>
           </li>
           <li>
@@ -1183,7 +1278,7 @@ export default function AdminPanel() {
             </button>
             <div>
               <h1 className="admin-title">
-                {activeTab === "products" ? "Product Management" : activeTab === "bill" ? "Billing (POS)" : activeTab === "ai" ? "AI Analyser" : activeTab === "bulk" ? "Bulk Upload" : "Dashboard"}
+                {activeTab === "products" ? "Product Management" : activeTab === "bill" ? "Billing " : activeTab === "ai" ? "AI Analyser" : activeTab === "bulk" ? "Bulk Upload" : "Dashboard"}
               </h1>
               <p className="admin-subtitle">
                 {isMock

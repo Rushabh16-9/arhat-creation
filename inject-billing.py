@@ -179,7 +179,7 @@ id="tab-add-product">
             <button onClick={() => { setActiveTab("bill"); setShowForm(false); }}
 className={activeTab === "bill" ? "active" : ""}
 id="tab-billing">
-              ?? Billing (POS)
+              ?? Billing 
             </button>
           </li>'''
 
@@ -188,7 +188,7 @@ js = js.replace(old_tab, new_tab)
 # 3. Update the header title
 js = js.replace(
     '{activeTab === "products" ? "Product Management" : "Dashboard"}',
-    '{activeTab === "products" ? "Product Management" : activeTab === "bill" ? "Billing (POS)" : "Dashboard"}'
+    '{activeTab === "products" ? "Product Management" : activeTab === "bill" ? "Billing " : "Dashboard"}'
 )
 
 # 4. Conditionally render the table and the billing system

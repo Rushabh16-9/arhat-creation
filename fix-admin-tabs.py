@@ -19,7 +19,7 @@ js = re.sub(
           </li>
           <li>
             <button onClick={() => { setActiveTab("bill"); setShowForm(false); }} className={activeTab === "bill" ? "active" : ""} id="tab-billing">
-              ?? Billing (POS)
+              ?? Billing 
             </button>
           </li>''',
     js,
@@ -29,7 +29,7 @@ js = re.sub(
 # 2. Update the main header title
 js = re.sub(
     r'\{activeTab === "products" \? "Product Management" : "Dashboard"\}',
-    '{activeTab === "products" ? "Product Management" : activeTab === "bill" ? "Billing (POS)" : "Dashboard"}',
+    '{activeTab === "products" ? "Product Management" : activeTab === "bill" ? "Billing " : "Dashboard"}',
     js
 )
 
