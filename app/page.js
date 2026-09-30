@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
@@ -316,85 +316,39 @@ function Product360Modal({ product, onClose }) {
 }
 
 function ProductCard({ product, onClick }) {
-
   const discount = product.original_price ? Math.round((1 - product.price / product.original_price) * 100) : 0;
-
   const stockLabel = product.stock > 10 ? 'In Stock' : product.stock > 0 ? `Only ${product.stock} left` : 'Out of Stock';
 
-
-
   return (
-
-    <div className="product-card" onClick={onClick} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && onClick()} id={`product-${product.id}`} style={{ background: '#ffffff', borderRadius: '24px', overflow: 'hidden', border: '1px solid var(--border)', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', cursor: 'pointer', display: 'flex', flexDirection: 'column', height: '100%', transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)' }} onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = '0 20px 40px rgba(15,23,42,0.1)'; e.currentTarget.style.borderColor = 'rgba(0,150,255,0.2)'; }} onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.03)'; e.currentTarget.style.borderColor = 'var(--border)'; }}>
-
-      <div style={{ position: 'relative', width: '100%', aspectRatio: '1', overflow: 'hidden', background: 'var(--bg2)' }}>
-
+    <div className="product-card" onClick={onClick} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && onClick()} id={`product-${product.id}`}>
+      <div className="product-img-wrap">
         {(product.enhanced_image_url || product.image_url) ? (
-
-          <img src={product.enhanced_image_url || product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={e => e.currentTarget.style.transform = 'none'} />
-
+          <img src={product.enhanced_image_url || product.image_url} alt={product.name} />
         ) : (
-
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48 }}>\uD83D\uDCE6</div>
-
+          <div className="product-img-placeholder">
+            <span className="placeholder-icon">📦</span>
+          </div>
         )}
-
-        {discount > 0 && <div style={{ position: 'absolute', top: '16px', right: '16px', background: '#ef4444', color: '#fff', padding: '4px 10px', borderRadius: '8px', fontSize: '13px', fontWeight: '800', boxShadow: '0 4px 12px rgba(239,68,68,0.25)' }}>-{discount}%</div>}
-
-        
-
+        {discount > 0 && <div className="badge-discount">-{discount}%</div>}
       </div>
 
-      <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-
+      <div className="product-body">
         {product.category && (
-
-          <div style={{ fontSize: '12px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '8px', fontWeight: '800', opacity: 0.8 }}>
-
-            {product.category}
-
-          </div>
-
+          <div className="product-category-tag">{product.category}</div>
         )}
-
-        <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', marginBottom: '8px', lineHeight: '1.3' }}>{product.name}</h3>
-
+        <h3 className="product-name">{product.name}</h3>
         {product.description && (
-
-          <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6', marginBottom: '16px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.description}</p>
-
+          <p className="product-desc">{product.description}</p>
         )}
-
-        <div style={{ marginTop: 'auto', paddingTop: '20px' }}>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-
-            <span style={{ fontSize: '24px', fontWeight: '800', color: 'var(--primary)' }}>{"\u20B9"}{product.price?.toLocaleString('en-IN')}</span>
-
-            {product.original_price && (
-
-              <span style={{ fontSize: '15px', fontWeight: '600', color: '#94a3b8', textDecoration: 'line-through' }}>{"\u20B9"}{product.original_price.toLocaleString('en-IN')}</span>
-
-            )}
-
-          </div>
-
-          <button style={{ width: '100%', padding: '14px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', color: 'var(--primary)', fontSize: '15px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} onMouseOver={e => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'var(--primary)'; }} onMouseOut={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = 'var(--primary)'; e.currentTarget.style.borderColor = '#e2e8f0'; }}>
-
-            View Details
-
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-
-          </button>
-
+        <div className="product-price-block" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', marginTop: 'auto', paddingTop: '10px' }}>
+          <span className="product-price">{"₹"}{product.price?.toLocaleString('en-IN')}</span>
+          {product.original_price && (
+            <span className="product-orig-price">{"₹"}{product.original_price.toLocaleString('en-IN')}</span>
+          )}
         </div>
-
       </div>
-
     </div>
-
   );
-
 }
 
 
@@ -558,8 +512,17 @@ export default function StorePage() {
 
       {/* NAV */}
 
-            <nav className="main-nav" role="navigation">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <nav className="main-nav" role="navigation" style={{ 
+              height: 'auto',
+              minHeight: '64px',
+              flexDirection: 'column',
+              alignItems: 'stretch',
+              padding: '0 24px',
+              borderRadius: menuOpen ? '24px' : '32px',
+              transition: 'all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
+              overflow: 'hidden'
+            }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', minHeight: '64px' }}>
           <a href="/" className="nav-logo" aria-label="Arhat Creation Home">
             <LogoMark />
             <div className="nav-wordmark">
@@ -599,14 +562,31 @@ export default function StorePage() {
           </div>
         </div>
         
-        {menuOpen && (
-          <div className="mobile-menu-dropdown" style={{ width: '100%', padding: '16px 0', display: 'flex', flexDirection: 'column', gap: '16px', borderTop: '1px solid var(--border)' }}>
-            <a href="#products" onClick={() => setMenuOpen(false)} style={{ padding: '12px', fontWeight: '600', color: 'var(--text)' }}>Products</a>
-            <a href="#categories" onClick={() => setMenuOpen(false)} style={{ padding: '12px', fontWeight: '600', color: 'var(--text)' }}>Categories</a>
-            <a href={`https://wa.me/${WA}`} target="_blank" rel="noopener noreferrer" style={{ padding: '12px', fontWeight: '600', color: 'var(--primary)' }}>Contact Support</a>
-            <a href="/admin" style={{ padding: '12px', fontWeight: '600', color: 'var(--text-muted)' }}>Admin Panel</a>
+        <div style={{
+          display: 'grid',
+          gridTemplateRows: menuOpen ? '1fr' : '0fr',
+          transition: 'grid-template-rows 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
+          width: '100%'
+        }}>
+          <div style={{ overflow: 'hidden' }}>
+            <div className="mobile-menu-dropdown" style={{ 
+              width: '100%', 
+              padding: menuOpen ? '16px 0 24px 0' : '0', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '16px', 
+              borderTop: menuOpen ? '1px solid var(--border)' : '1px solid transparent',
+              opacity: menuOpen ? 1 : 0,
+              transition: 'all 0.3s ease',
+              pointerEvents: menuOpen ? 'auto' : 'none'
+            }}>
+              <a href="#products" onClick={() => setMenuOpen(false)} style={{ padding: '4px 12px', fontWeight: '600', color: 'var(--text)' }}>Products</a>
+              <a href="#categories" onClick={() => setMenuOpen(false)} style={{ padding: '4px 12px', fontWeight: '600', color: 'var(--text)' }}>Categories</a>
+              <a href={`https://wa.me/${WA}`} target="_blank" rel="noopener noreferrer" style={{ padding: '4px 12px', fontWeight: '600', color: 'var(--primary)' }}>Contact Support</a>
+              <a href="/admin" style={{ padding: '4px 12px', fontWeight: '600', color: 'var(--text-muted)' }}>Admin Panel</a>
+            </div>
           </div>
-        )}
+        </div>
       </nav>
 
 
