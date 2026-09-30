@@ -5,8 +5,7 @@ with open('app/globals.css', 'r', encoding='utf-8') as f:
     lines = f.readlines()
 
 for i, line in enumerate(lines):
-    if '@media (max-width: 768px)' in line or '@media (max-width: 640px)' in line:
-        start = max(0, i)
-        for j in range(start, min(len(lines), start+30)):
+    if '.main-nav' in line:
+        for j in range(max(0, i-2), i+15):
             print(f'{j+1}: {lines[j].strip()}')
-        print('---')
+        break

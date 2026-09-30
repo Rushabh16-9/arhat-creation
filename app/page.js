@@ -215,35 +215,9 @@ function Product360Modal({ product, onClose }) {
 
 
 
-            {/* Thumbnail Strip */}
-
-            {(product.enhanced_image_url || product.image_url) && (
-
-              <div style={{ display: 'flex', gap: '12px', marginTop: '16px', justifyContent: 'center' }}>
-
-                {[1, 2, 3].map(i => (
-
-                  <div key={i} style={{ width: '64px', height: '64px', borderRadius: '10px', overflow: 'hidden', border: i === 1 ? '2px solid var(--primary)' : '1px solid var(--border)', cursor: 'pointer', opacity: i === 1 ? 1 : 0.6, transition: 'all 0.2s' }}>
-
-                    <img src={product.enhanced_image_url || product.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-
-                  </div>
-
-                ))}
-
-              </div>
-
-            )}
-
           </div>
 
-          
-
-          
-
-
-
-          {/* Details Panel */}
+{/* Details Panel */}
 
           <div className="modal-details">
 
@@ -317,7 +291,7 @@ function Product360Modal({ product, onClose }) {
                 <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', borderRadius: '999px', border: '1px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
                   <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '500', color: '#475569', cursor: 'pointer', background: 'transparent', border: 'none', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#f1f5f9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>−</button>
                   <span style={{ width: '40px', textAlign: 'center', fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{qty}</span>
-                  <button onClick={() => setQty(q => Math.min(product.stock || 99, q + 1))} style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '500', color: '#475569', cursor: 'pointer', background: 'transparent', border: 'none', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#f1f5f9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>+</button>
+                  <button onClick={() => setQty(q => q + 1)} style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '500', color: '#475569', cursor: 'pointer', background: 'transparent', border: 'none', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#f1f5f9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>+</button>
                 </div>
               </div>
               
@@ -601,8 +575,7 @@ export default function StorePage() {
           </ul>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <a href={`https://wa.me/${WA}`} target="_blank" rel="noopener noreferrer"
-              className="glow-btn nav-cta" id="nav-whatsapp-btn">
+            <a href={`https://wa.me/${WA}`} target="_blank" rel="noopener noreferrer" className="glow-btn nav-cta" id="nav-whatsapp-btn" style={{ display: 'flex', alignItems: 'center', gap: '6px', height: '38px', padding: '0 16px' }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
               <span>Chat</span>
             </a>
@@ -744,15 +717,13 @@ export default function StorePage() {
 
           </div>
 
-          <span className="section-sub">Tap to View 360°</span>
-
         </div>
 
 
 
         {/* Search + Filter */}
 
-        <div style={{ display: 'flex', gap: 12, marginBottom: 32, flexWrap: 'wrap' }}>
+        <div className="filter-row" style={{ display: 'flex', gap: 12, marginBottom: 32, flexWrap: 'wrap', alignItems: 'center' }}>
 
           <input
 
@@ -764,9 +735,7 @@ export default function StorePage() {
 
             onChange={e => setSearchQuery(e.target.value)}
 
-            className="form-input"
-
-            style={{ flex: 1, minWidth: 200 }}
+            style={{ flex: '1 1 200px' }} className="form-input search-input"
 
             id="product-search"
 
@@ -865,25 +834,51 @@ export default function StorePage() {
       {/* FOOTER */}
 
       <footer className="site-footer">
-
         <div className="footer-inner">
+          <div className="footer-col-brand" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="nav-logo" style={{ marginBottom: '8px' }}>
+              <LogoMark />
+              <span className="name" style={{ fontSize: '20px' }}>ARHAT<span className="kick">CREATION</span></span>
+            </div>
+            <p className="footer-brand-tag" style={{ color: 'var(--text-muted)', lineHeight: '1.6', fontSize: '14px', maxWidth: '300px' }}>
+              Curating premium products and delivering unparalleled luxury directly to you. Experience the extraordinary.
+            </p>
+          </div>
 
-          <div className="footer-brand">Arhat Creation</div>
+          <div className="footer-col">
+            <h4 className="footer-heading">Shop</h4>
+            <ul className="footer-links">
+              <li><a href="#products">All Products</a></li>
+              <li><a href="#products">New Arrivals</a></li>
+              <li><a href="#products">Best Sellers</a></li>
+            </ul>
+          </div>
 
-          <ul className="footer-links">
+          <div className="footer-col">
+            <h4 className="footer-heading">Support</h4>
+            <ul className="footer-links">
+              <li><a href={`https://wa.me/${WA}`} target="_blank" rel="noopener noreferrer">Contact via WhatsApp</a></li>
+              <li><a href="#">Shipping & Returns</a></li>
+              <li><a href="#">Privacy Policy</a></li>
+            </ul>
+          </div>
 
-            <li><a href="#products">Products</a></li>
-
-            <li><a href={`https://wa.me/${WA}`} target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
-
-            <li><a href="/admin">Admin</a></li>
-
-          </ul>
-
-          <p className="footer-copy">© {new Date().getFullYear()} Arhat Creation. All rights reserved.</p>
-
+          <div className="footer-col">
+            <h4 className="footer-heading">Admin</h4>
+            <ul className="footer-links">
+              <li><a href="/admin">Dashboard Access</a></li>
+            </ul>
+          </div>
         </div>
-
+        
+        <div className="footer-bottom" style={{ marginTop: '48px', paddingTop: '24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+          <p className="footer-copy">© {new Date().getFullYear()} Arhat Creation. All rights reserved.</p>
+          <div className="footer-socials" style={{ display: 'flex', gap: '16px' }}>
+            <a href="#" aria-label="Instagram" style={{ color: 'var(--text-dim)', fontSize: '13px', fontWeight: '700', letterSpacing: '.1em' }}>IG</a>
+            <a href="#" aria-label="Facebook" style={{ color: 'var(--text-dim)', fontSize: '13px', fontWeight: '700', letterSpacing: '.1em' }}>FB</a>
+            <a href="#" aria-label="Twitter" style={{ color: 'var(--text-dim)', fontSize: '13px', fontWeight: '700', letterSpacing: '.1em' }}>X</a>
+          </div>
+        </div>
       </footer>
 
 
