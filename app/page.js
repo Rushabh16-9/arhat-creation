@@ -606,10 +606,7 @@ export default function StorePage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortOrder, setSortOrder] = useState('featured');
   
-  const [cart, setCart] = useState(() => {
-    if (typeof window === 'undefined') return [];
-    try { return JSON.parse(localStorage.getItem('arhat_cart') || '[]'); } catch { return []; }
-  });
+  const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
 
   const [userProfile, setUserProfile] = useState({ name: '', phone: '', address: '' });
@@ -618,6 +615,9 @@ export default function StorePage() {
   const [profileInitAddr, setProfileInitAddr] = useState('');
 
   useEffect(() => {
+    const savedCart = localStorage.getItem('arhat_cart');
+    if (savedCart) { try { setCart(JSON.parse(savedCart)); } catch(e) {} }
+
     const saved = localStorage.getItem('arhat_user_profile');
     if (saved) { try { setUserProfile(JSON.parse(saved)); } catch (e) {} }
     // Restore Supabase session
@@ -629,8 +629,13 @@ export default function StorePage() {
     });
   }, []);
 
-  // Persist cart to localStorage on every change
+  // Persist cart to localStorage on every change (except first render)
+  const isFirstRender = useRef(true);
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     localStorage.setItem('arhat_cart', JSON.stringify(cart));
   }, [cart]);
 
